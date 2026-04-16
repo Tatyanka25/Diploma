@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="row g-4">
+
+        <div class="col-md-4">
+            <div class="card p-4 shadow-sm border-0 rounded-4">
+                <h4 class="fw-bold">Индивидуальные критерии</h4>
+                <p class="text-muted small">Вы можете добавить до 2-х дополнительных критериев для этого сотрудника.</p>
+                
+                {% if individual_count < 2 %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="add_individual" value="1">
+                    <div class="mb-3">
+                        <input type="text" name="criterion_name" class="form-control" placeholder="Название критерия" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Добавить</button>
+                </form>
+                {% else %}
+                <div class="alert alert-warning small">Лимит индивидуальных критериев исчерпан.</div>
+                {% endif %}
+
+                {% if error_message %}
+                <div class="text-danger small mt-2">{{ error_message }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card p-4 shadow-sm border-0 rounded-4">
+                <h4 class="fw-bold mb-4">Набор критериев для: {{ employee.get_full_name }}</h4>
+                
+                <div class="list-group list-group-flush">
+                    {% for c in criteria %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <span class="fw-bold">{{ c.name }}</span>
+                            {% if c.is_individual %}
+                                <span class="badge bg-info ms-2">Индивидуальный</span>
+                            {% else %}
+                                <span class="badge bg-light text-muted border ms-2">От должности</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex align-items-center">
+                            {% if c.is_individual %}
+                                <form method="post" class="me-3" onsubmit="return confirm('Удалить индивидуальный критерий?')">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="delete_individual" value="1">
+                                    <input type="hidden" name="criterion_id" value="{{ c.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                            <i class="bi bi-shield-check text-success"></i>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if criteria.count >= 2 %}
+                <div class="mt-4 border-top pt-3">
+                    <a href="{% url 'compare_criteria' employee.id %}" class="btn btn-warning btn-lg w-100 fw-bold">Запустить МАИ (расчет весов)</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

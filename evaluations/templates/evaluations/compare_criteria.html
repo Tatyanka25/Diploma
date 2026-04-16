@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-header bg-primary text-white py-3">
+            <h4 class="mb-0 text-center">Попарное сравнение критериев</h4>
+        </div>
+        <div class="card-body p-4">
+            <div class="alert alert-info small mb-4">
+                <strong>Инструкция:</strong> Выберите, какой критерий из пары важнее для успешной работы на данной должности и насколько.
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                {% for c1, c2 in pairs %}
+                <div class="row align-items-center mb-4 py-3 bg-light rounded-3 g-0">
+                    <div class="col-md-4 text-center px-2">
+                        <span class="fw-bold">{{ c1.name }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="pair_{{ c1.id }}_{{ c2.id }}" class="form-select border-primary shadow-sm">
+                            <option value="1">1 — Равнозначны</option>
+                            <option value="3">3 — {{ c1.name }} важнее</option>
+                            <option value="5">5 — {{ c1.name }} значительно важнее</option>
+                            <option value="7">7 — {{ c1.name }} существенно важнее</option>
+                            <option value="9">9 — {{ c1.name }} абсолютно важнее</option>
+                            <option value="0.333">1/3 — {{ c2.name }} важнее</option>
+                            <option value="0.2">1/5 — {{ c2.name }} значительно важнее</option>
+                            <option value="0.142">1/7 — {{ c2.name }} существенно важнее</option>
+                            <option value="0.111">1/9 — {{ c2.name }} абсолютно важнее</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 text-center px-2">
+                        <span class="fw-bold">{{ c2.name }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="text-center mt-5">
+                    <button type="submit" class="btn btn-success btn-lg px-5 rounded-pill shadow">
+                        Завершить оценку и рассчитать веса
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

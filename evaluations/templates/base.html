@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>HR System | Motivation</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+        <!-- Иконки -->
+        <link rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+        <style>
+        .feature-icon {
+            font-size: 2rem;
+            color: #0d6efd;
+        }
+        footer { background-color: #212529; color: white; padding: 60px 0; margin-top: 100px; }
+        footer a { color: #adb5bd; text-decoration: none; }
+        footer a:hover { color: white; }
+        footer p, footer li { color: #dee2e6 !important; }
+    </style>
+    </head>
+    <body>
+        <nav
+            class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+            <div class="container">
+                <a class="navbar-brand fw-bold" href="{% url 'home' %}"><i
+                        class="bi bi-cpu-fill me-2"></i>HR-TECH</a>
+                <div class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                    <a class="nav-link"
+                        href="{% url 'employee_list' %}">Команда</a>
+                    <form action="{% url 'logout' %}" method="post"
+                        class="ms-3">
+                        {% csrf_token %}
+                        <button
+                            class="btn btn-outline-light btn-sm">Выйти</button>
+                    </form>
+                    {% else %}
+                    <a class="nav-link text-white me-3"
+                        href="{% url 'register_company' %}">Регистрация</a>
+                    <a class="nav-link btn btn-primary text-white px-4"
+                        href="{% url 'login' %}">Войти</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+
+        <main style="min-height: 80vh;">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer>
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h5>О проекте</h5>
+                        <p class="small">{{ footer.about }}</p>
+                    </div>
+                    <div class="col-md-2">
+                        <h5>Ссылки</h5>
+                        <ul class="list-unstyled">
+                            {% for link in footer.quick_links %}
+                            <li><a href="{{ link.url }}">{{ link.name
+                                    }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-md-3">
+                        <h5>Контакты</h5>
+                        <p class="small mb-1"><i
+                                class="bi bi-geo-alt me-2"></i>{{
+                            footer.contacts.address }}</p>
+                        <p class="small mb-1"><i
+                                сlass="bi bi-envelope me-2"></i>{{
+                            footer.contacts.email }}</p>
+                        <p class="small"><i class="bi bi-telephone me-2"></i>{{
+                            footer.contacts.phone }}</p>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <h5>Мы в сети</h5>
+                        {% for social in footer.social %}
+                        <a href="#" class="ms-3 fs-5"><i
+                                class="bi bi-{{ social|lower }}"></i></a>
+                        {% endfor %}
+                    </div>
+                </div>
+                <hr class="mt-4 border-secondary">
+                <p class="text-center small mb-0">© 2026 Разработано
+                    для дипломного проекта. Все права защищены.</p>
+            </div>
+        </footer>
+
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

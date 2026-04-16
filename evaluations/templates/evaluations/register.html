@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4">Регистрация компании</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <h5 class="text-primary border-bottom pb-2">Данные компании</h5>
+                        {{ c_form.as_p }}
+                        
+                        <h5 class="text-primary border-bottom pb-2 mt-4">Данные администратора</h5>
+                        {{ u_form.as_p }}
+                        
+                        <button type="submit" class="btn btn-primary w-100 btn-lg mt-4">Зарегистрировать и войти</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

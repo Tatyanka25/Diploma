@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h2 class="fw-bold mb-0 text-dark">{{ title }}</h2>
+            <p class="text-muted mb-0">Организация: <span
+                    class="badge bg-secondary">{{ user.company.name }}</span></p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div
+            class="{% if user.role == 'head' %}col-md-8{% else %}col-12{% endif %}">
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                <div
+                    class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom-0">
+                    <h5 class="mb-0 fw-bold"><i
+                            class="bi bi-people me-2"></i>Аккаунты в
+                        системе</h5>
+                    <a href="{% url add_url %}"
+                        class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">+
+                        {{ add_label }}</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead
+                                class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="ps-4 py-3">ФИО / Логин</th>
+                                    <th>Email</th>
+                                    <th>Должность</th>
+                                    <th class="text-end pe-4">Действие</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in users_list %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">{{ u.get_full_name }}</div>
+                                        <div class="text-muted"
+                                            style="font-size: 0.8rem;">@{{ u.username }}</div>
+                                    </td>
+                                    <td>{{ u.email }}</td>
+                                    <td>
+                                        <span
+                                            class="badge bg-light text-primary border border-primary-subtle px-3 py-2">
+                                            {{ u.position.name|default:"Не указана" }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        {% if user.role == 'manager' %}
+                                        <a
+                                            href="{% url 'manage_criteria' u.id %}"
+                                            class="btn btn-sm btn-outline-primary rounded-pill px-3">Критерии</a>
+                                        {% else %}
+                                        <span
+                                            class="badge bg-secondary-subtle text-secondary rounded-pill">Управление</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4"
+                                        class="text-center py-5 text-muted">
+                                        <i
+                                            class="bi bi-person-exclamation display-4 d-block mb-3 opacity-25"></i>
+                                        Пользователей пока нет
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if user.role == 'head' %}
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i
+                            class="bi bi-briefcase me-2"></i>Справочник
+                        должностей</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Форма добавления новой должности -->
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="add_position" value="1">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Создать
+                                новую должность:</label>
+                            <div class="input-group">
+                                {{ pos_form.name }}
+                                <button type="submit" class="btn btn-success"><i
+                                        class="bi bi-plus-lg"></i></button>
+                            </div>
+                            {% if pos_form.name.errors %}
+                            <div class="text-danger small mt-1">{{ pos_form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </form>
+
+                    <h6
+                        class="fw-bold mb-3 small text-uppercase text-muted border-bottom pb-2">Список
+                        и критерии:</h6>
+
+                    <div class="accordion accordion-flush"
+                        id="positionsAccordion">
+                        {% for pos in positions %}
+                        {% with is_opened=request.GET.opened_pos %}
+                        <div
+                            class="accordion-item border rounded-3 mb-2 shadow-sm overflow-hidden">
+                            <h2 class="accordion-header">
+                                <button
+                                    class="accordion-button {% if is_opened != pos.id|stringformat:'s' %}collapsed{% endif %} py-2 px-3 fw-bold bg-light"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#pos-{{ pos.id }}">
+                                    <div
+                                        class="d-flex justify-content-between w-100 pe-3">
+                                        <span>{{ pos.name }}</span>
+                                        <span
+                                            class="badge bg-secondary rounded-pill">{{ pos.base_criteria.count }}</span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="pos-{{ pos.id }}"
+                                class="accordion-collapse collapse {% if is_opened == pos.id|stringformat:'s' %}show{% endif %}"
+                                data-bs-parent="#positionsAccordion">
+                                <div class="accordion-body bg-white">
+                                    <ul
+                                        class="list-group list-group-flush mb-3">
+                                        {% for crit in pos.base_criteria.all %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 small">
+                                            <span><i class="bi bi-dot text-primary me-1"></i>{{ crit.name }}</span>
+                                            
+                                            <form method="post" style="display:inline;" onsubmit="return confirm('Удалить этот критерий из должности?')">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="delete_pos_criterion" value="1">
+                                                <input type="hidden" name="criterion_id" value="{{ crit.id }}">
+                                                <button type="submit" class="btn btn-link text-danger p-0 ms-2" title="Удалить">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </form>
+                                        {% endfor %}
+                                    </ul>
+
+                                    <form method="post"
+                                        class="mt-2 pt-2 border-top">
+                                        {% csrf_token %}
+                                        <input type="hidden"
+                                            name="add_pos_criterion" value="1">
+                                        <input type="hidden" name="pos_id"
+                                            value="{{ pos.id }}">
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" name="crit_name"
+                                                class="form-control"
+                                                placeholder="Новый критерий..."
+                                                required>
+                                            <button class="btn btn-primary"
+                                                type="submit"><i
+                                                    class="bi bi-plus"></i></button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                        {% empty %}
+                        <div class="text-center py-4 text-muted small">Список
+                            должностей пуст</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,.125);
+    }
+    .accordion-button:not(.collapsed) {
+        color: #0d6efd;
+        background-color: #f8f9fa;
+    }
+    .badge { font-weight: 500; }
+</style>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 p-3">
+                <div class="card-body text-center">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                        {{ user.first_name|first }}{{ user.last_name|first }}
+                    </div>
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">{{ user.position }}</p>
+                    <hr>
+                    <div class="text-start">
+                        <p><strong><i class="bi bi-telephone"></i> Телефон:</strong> {{ user.phone_number|default:"Не указан" }}</p>
+                        <p><strong><i class="bi bi-envelope"></i> Email:</strong> {{ user.email }}</p>
+                        <p><strong><i class="bi bi-building"></i> Компания:</strong> {{ user.company.name }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4 p-4 mb-4 bg-gradient bg-dark text-white">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5 class="opacity-75">Ваш коэффициент эффективности</h5>
+                        <div class="d-flex align-items-baseline">
+                            <h2 class="display-3 fw-bold mb-0">
+                                {% if eval_result %}
+                                    {{ eval_result.share|floatformat:4 }} 
+                                {% else %}
+                                    0.0000
+                                {% endif %}
+                            </h2>
+                            <span class="ms-3 badge bg-success">
+                                {% if eval_result %}{{ eval_result.share_percentage }}{% else %}0%{% endif %}
+                            </span>
+                        </div>
+                        <p class="small mt-2 mb-0 opacity-50">* Относительная доля вашего вклада в результаты команды</p>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-pie-chart-fill" style="font-size: 3rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-4 p-4">
+                <h5 class="mb-4">Ваша формула оценки</h5>
+                <div class="p-3 bg-light rounded-3 mb-4 text-center border">
+                    <code>
+                        Рейтинг = 
+                        {% for c in criteria %}
+                            ({{ c.weight|default:"Вес" }} × {{ c.name }}) {% if not forloop.last %} + {% endif %}
+                        {% empty %}
+                            Формула еще не сформирована (критерии не назначены)
+                        {% endfor %}
+                    </code>
+                </div>
+
+                <h6>Список назначенных критериев:</h6>
+                <div class="list-group list-group-flush">
+                    {% for c in criteria %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <span class="fw-bold">{{ c.name }}</span>
+                                <br><small class="text-muted">Статус: 
+                                    {% if c.employee_evaluated %} Оценено вами {% else %} Ожидает вашей оценки {% endif %}
+                                </small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">Вес: {{ c.weight|default:"0.00" }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                {% if criteria %}
+                <div class="mt-4">
+                    <a href="#" class="btn btn-warning w-100 py-2 fw-bold">Пройти попарное сравнение критериев (МАИ)</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
