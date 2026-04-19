@@ -17,7 +17,7 @@ import numpy as np
 
 from core import settings
 from evaluations.forms import EmployeeCreationForm, UserCreationFormExtended
-from .forms import CompanyRegistrationForm, CompanyWeightsForm, PositionForm, UserRegistrationForm
+from .forms import CompanyRegistrationForm, CompanyWeightsForm, PositionForm, ReassignSubordinatesForm, UserRegistrationForm
 from django.contrib.auth.decorators import login_required
 from .models import CriterionScore, EvaluationPhase, EvaluationResult, Criterion, EmployeeCriterion, PairwiseComparison, Position, PositionCriterion, User, Company
 from django.contrib.auth.forms import PasswordResetForm
@@ -1118,4 +1118,56 @@ def rate_employee(request, employee_id):
         'target': target,
         'criteria': criteria,
         'range': range(1, 11)
+    })
+
+@login_required
+def delete_employee(request, employee_id):
+    employee = get_object_or_404(User, id=employee_id, company=request.user.company, role='employee')
+    
+    active_phases = EvaluationPhase.objects.filter(
+        position=employee.position,
+        manager=employee.manager,
+        is_active=True,
+        is_archived=False
+    ).exists()
+
+    if active_phases:
+        messages.error(request, f"Нельзя удалить сотрудника {employee.get_full_name()}, пока идет активная фаза оценки его должности.")
+        return redirect('management_list')
+
+    if request.method == 'POST':
+        employee.delete()
+        messages.success(request, "Сотрудник успешно удален.")
+        return redirect('management_list')
+    
+    return render(request, 'evaluations/confirm_delete.html', {'target': employee})
+
+@login_required
+def delete_manager(request, manager_id):
+    manager_to_delete = get_object_or_404(User, id=manager_id, company=request.user.company, role='manager')
+
+    if EvaluationPhase.objects.filter(manager=manager_to_delete, is_active=True, is_archived=False).exists():
+        messages.error(request, "Нельзя удалить менеджера с активными фазами оценки. Сначала завершите или архивируйте их.")
+        return redirect('management_list')
+
+    subordinates = manager_to_delete.subordinates.all()
+    
+    if request.method == 'POST':
+        form = ReassignSubordinatesForm(request.POST, company=request.user.company, exclude_user=manager_to_delete)
+        if form.is_valid():
+            new_manager = form.cleaned_data['new_manager']
+            
+            with transaction.atomic():
+                subordinates.update(manager=new_manager)
+                manager_to_delete.delete()
+            
+            messages.success(request, f"Менеджер удален. Команда переведена под управление {new_manager.get_full_name()}.")
+            return redirect('management_list')
+    else:
+        form = ReassignSubordinatesForm(company=request.user.company, exclude_user=manager_to_delete)
+
+    return render(request, 'evaluations/reassign_manager.html', {
+        'manager': manager_to_delete,
+        'subordinates': subordinates,
+        'form': form
     })

@@ -37,4 +37,6 @@ urlpatterns = [
     path('ratings/', views.ratings_view, name='ratings'),
     path('ratings/export/', views.export_ratings_excel, name='export_ratings'),
     path('ratings/start-new/', views.start_new_evaluation, name='start_new_evaluation'),
+    path('employees/delete/<int:employee_id>/', views.delete_employee, name='delete_employee'),
+    path('managers/delete/<int:manager_id>/', views.delete_manager, name='delete_manager'),
 ]

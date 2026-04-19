@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <!-- Красная полоса сверху для привлечения внимания -->
+                <div class="bg-danger py-2"></div>
+                
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-person-x-fill fs-1"></i>
+                        </div>
+                        <h2 class="fw-bold">Удаление менеджера</h2>
+                        <p class="text-muted text-uppercase small fw-bold">{{ manager.get_full_name }}</p>
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-4 mb-4">
+                        <h6 class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Важное действие</h6>
+                        <p class="small mb-0">
+                            У данного менеджера в подчинении находится <strong>{{ subordinates.count }}</strong> сотрудников. 
+                            Чтобы не потерять данные их оценок, необходимо назначить им нового руководителя.
+                        </p>
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Рендерим форму перепривязки -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-muted">НОВЫЙ РУКОВОДИТЕЛЬ ДЛЯ КОМАНДЫ:</label>
+                            {{ form.new_manager }}
+                            {% if form.new_manager.errors %}
+                                <div class="text-danger small mt-1">{{ form.new_manager.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger py-3 rounded-pill fw-bold shadow-sm">
+                                <i class="bi bi-arrow-left-right me-2"></i>Перепривязать и удалить
+                            </button>
+                            <a href="{% url 'management_list' %}" class="btn btn-light py-3 rounded-pill text-muted">
+                                Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer bg-light border-0 py-3 text-center">
+                    <small class="text-muted">Все архивные результаты оценок будут сохранены в базе данных.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

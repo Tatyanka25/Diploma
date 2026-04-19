@@ -160,13 +160,29 @@
                                     </td>
                                     {% endif %}
                                     <td class="text-end pe-4">
-                                        {% if user.role == 'manager' %}
-                                            <a href="{% url 'manage_criteria' u.id %}" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
-                                               Управление
-                                            </a>
-                                        {% else %}
-                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill">Менеджер</span>
-                                        {% endif %}
+                                        <div class="d-flex justify-content-end gap-2">
+                                            {% if u.role == 'manager' and user.role == 'head' %}
+                                                <a href="{% url 'delete_manager' u.id %}" 
+                                                   class="btn btn-sm btn-outline-danger rounded-circle p-1 d-flex align-items-center justify-content-center {% if u.is_evaluation_active %}disabled opacity-25{% endif %}"
+                                                   style="width: 32px; height: 32px;"
+                                                   {% if u.is_evaluation_active %}data-bs-toggle="tooltip" title="Нельзя удалить: у менеджера есть активные фазы"{% endif %}>
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            {% elif u.role == 'employee' and user.role == 'manager' %}
+                                                <a href="{% url 'delete_employee' u.id %}" 
+                                                   class="btn btn-sm btn-outline-danger rounded-circle p-1 d-flex align-items-center justify-content-center {% if u.is_evaluation_active %}disabled opacity-25{% endif %}"
+                                                   style="width: 32px; height: 32px;"
+                                                   {% if u.is_evaluation_active %}data-bs-toggle="tooltip" title="Нельзя удалить: идет активная фаза оценки"{% endif %}>
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            {% endif %}
+
+                                            {% if user.role == 'manager' %}
+                                                <a href="{% url 'manage_criteria' u.id %}" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                                   Управление
+                                                </a>
+                                            {% endif %}
+                                        </div>
                                     </td>
                                 </tr>
                                 {% empty %}
@@ -317,6 +333,11 @@
     .locked-form .weight-input:focus {
         box-shadow: none;
         border-color: transparent;
+    }
+
+    .btn-outline-danger.rounded-circle:hover {
+        background-color: #dc3545;
+        color: white;
     }
 </style>
 {% endblock %}

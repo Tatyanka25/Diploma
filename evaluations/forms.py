@@ -4,6 +4,22 @@ from django.contrib.auth.forms import SetPasswordForm
 import re
 from django.core.exceptions import ValidationError
 
+class ReassignSubordinatesForm(forms.Form):
+    new_manager = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        label="Выберите нового руководителя для команды",
+        widget=forms.Select(attrs={'class': 'form-select rounded-pill'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        company = kwargs.pop('company')
+        exclude_user = kwargs.pop('exclude_user')
+        super().__init__(*args, **kwargs)
+        self.fields['new_manager'].queryset = User.objects.filter(
+            company=company, 
+            role__in=['manager', 'head']
+        ).exclude(id=exclude_user.id)
+
 class PositionForm(forms.ModelForm):
     class Meta:
         model = Position
