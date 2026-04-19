@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <a href="javascript:history.back()" class="btn btn-link text-decoration-none p-0 text-secondary">
+                <i class="bi bi-arrow-left-circle me-1"></i> Вернуться к списку
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                <!-- Заголовок карточки -->
+                <div class="card-header bg-primary text-white p-4 border-0">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-weight: bold;">
+                            {{ target.first_name|first }}{{ target.last_name|first }}
+                        </div>
+                        <div>
+                            <h4 class="mb-0 fw-bold">Оценка эффективности</h4>
+                            <p class="mb-0 opacity-75">{{ target.get_full_name }} — {{ target.position.name }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <div class="alert alert-info border-0 rounded-4 mb-5 d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                        <div>
+                            <strong>Инструкция:</strong> Пожалуйста, оцените работу сотрудника по каждому критерию по шкале от 1 до 10. 
+                            <br><small>1 — минимальный результат, 10 — превосходный результат.</small>
+                        </div>
+                    </div>
+
+                    <form method="post" id="evaluationForm">
+                        {% csrf_token %}
+                        
+                        {% for crit in criteria %}
+                        <div class="criterion-block mb-5">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0 text-dark">
+                                    <span class="text-primary me-2">#{{ forloop.counter }}</span> {{ crit.name }}
+                                </h5>
+                                <span class="badge bg-light text-muted border">Критерий</span>
+                            </div>
+
+                            <!-- Шкала оценок 1-10 -->
+                            <div class="btn-group w-100 shadow-sm" role="group" aria-label="Rating scale">
+                                {% for i in range %}
+                                <input type="radio" class="btn-check" name="score_{{ crit.id }}" 
+                                       id="btn_{{ crit.id }}_{{ i }}" value="{{ i }}" required>
+                                <label class="btn btn-outline-primary py-3 fw-bold" for="btn_{{ crit.id }}_{{ i }}">
+                                    {{ i }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-2 px-1">
+                                <small class="text-muted">Низкая эффективность</small>
+                                <small class="text-muted">Высокая эффективность</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <div class="mt-5 pt-4 border-top">
+                            <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill py-3 fw-bold shadow">
+                                <i class="bi bi-check-circle me-2"></i> Сохранить и завершить оценку
+                            </button>
+                            <p class="text-center text-muted small mt-3">
+                                <i class="bi bi-shield-lock me-1"></i> Ваши оценки будут анонимны для коллег.
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-outline-primary:hover {
+        background-color: #e7f1ff;
+        color: #0d6efd;
+    }
+    
+    .btn-check:checked + .btn-outline-primary {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-outline-primary {
+        transition: all 0.2s ease;
+        border-color: #dee2e6;
+        color: #495057;
+    }
+
+    .btn-group {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .criterion-block {
+        animation: fadeIn 0.5s ease both;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}

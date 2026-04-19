@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+        <div>
+            <h2 class="fw-bold mb-1">Рейтинги эффективности</h2>
+            <p class="text-muted mb-0">
+                Последний завершенный период: 
+                {% if month %}
+                    <span class="badge bg-dark px-3 py-2">{{ month }}/{{ year }}</span>
+                {% else %}
+                    <span class="text-danger">Данные еще не сформированы</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% for table in tables %}
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-primary text-truncate me-3">{{ table.title }}</h5>
+            
+            <a href="{% url 'export_ratings' %}?table_id={{ table.table_id }}{% if table.pos_id %}&pos_id={{ table.pos_id }}{% endif %}" 
+               class="btn btn-sm btn-outline-success rounded-pill px-3 flex-shrink-0">
+                <i class="bi bi-file-earmark-excel me-1"></i> Экспорт
+            </a>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="table-layout: fixed; min-width: 900px;">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr class="align-middle">
+                        <th class="ps-4 py-3" style="width: 100px;">Место</th>
+                        <th class="py-3" style="width: 30%;">Сотрудник</th>
+                        <th class="py-3" style="width: 20%;">Должность</th>
+                        <th class="py-3" style="width: 25%;">Индекс (Score)</th>
+                        <th class="text-end pe-4 py-3" style="width: 25%;">Доля в группе (Share)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in table.results %}
+                    <tr class="{% if r.employee == user %}table-primary{% endif %}">
+                        <td class="ps-4 fw-bold text-secondary">#{{ forloop.counter }}</td>
+                        <td>
+                            <div class="fw-bold text-truncate" title="{{ r.employee.get_full_name }}">
+                                {{ r.employee.get_full_name }}
+                            </div>
+                            <small class="text-muted">@{{ r.employee.username }}</small>
+                        </td>
+                        <td>
+                            <span class="text-secondary text-truncate d-block" title="{{ r.employee.position.name|default:'—' }}">
+                                {{ r.employee.position.name|default:"—" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary px-3 py-2 font-monospace">
+                                {{ r.total_score|floatformat:4 }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <span class="text-success fw-bold">{{ r.dynamic_share|floatformat:2 }}%</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-folder-x display-6"></i>
+                                <p class="mt-2 mb-0">Результаты для этой группы еще не сформированы.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-5">
+        <div class="card border-0 shadow-sm rounded-4 p-5">
+            <i class="bi bi-clipboard-data display-1 text-light-emphasis"></i>
+            <h4 class="mt-4 fw-bold">Система готова к работе</h4>
+            <p class="text-muted">Как только завершится первая оценка, здесь появятся рейтинги эффективности.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .table-primary td {
+        background-color: rgba(13, 110, 253, 0.05) !important;
+        box-shadow: inset 0 0 0 9999px rgba(13, 110, 253, 0.02);
+    }
+    
+    .text-truncate {
+        max-width: 100%;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .font-monospace {
+        font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+        font-size: 0.875rem;
+    }
+
+    .card {
+        border: none !important;
+    }
+</style>
+{% endblock %}

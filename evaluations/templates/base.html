@@ -1,98 +1,90 @@
 <!DOCTYPE html>
-<html lang="ru">
-    <head>
-        <meta charset="UTF-8">
-        <title>HR System | Motivation</title>
-        <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-            rel="stylesheet">
-        <!-- Иконки -->
-        <link rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-        <style>
-        .feature-icon {
-            font-size: 2rem;
-            color: #0d6efd;
+<html lang="ru" class="h-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR System | Motivation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <style>
+        body { display: flex; flex-direction: column; min-height: 100vh; background-color: #f8f9fa; }
+        .navbar-brand { font-size: 1.5rem; letter-spacing: 1px; }
+        
+        /* Кнопки авторизации: синие при наведении */
+        .nav-auth-btn {
+            border: 1px solid white;
+            color: white;
+            transition: 0.3s;
         }
-        footer { background-color: #212529; color: white; padding: 60px 0; margin-top: 100px; }
-        footer a { color: #adb5bd; text-decoration: none; }
-        footer a:hover { color: white; }
-        footer p, footer li { color: #dee2e6 !important; }
+        .nav-auth-btn:hover {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+            color: white !important;
+        }
     </style>
-    </head>
-    <body>
-        <nav
-            class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
-            <div class="container">
-                <a class="navbar-brand fw-bold" href="{% url 'home' %}"><i
-                        class="bi bi-cpu-fill me-2"></i>HR-TECH</a>
-                <div class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                    <a class="nav-link"
-                        href="{% url 'employee_list' %}">Команда</a>
-                    <form action="{% url 'logout' %}" method="post"
-                        class="ms-3">
-                        {% csrf_token %}
-                        <button
-                            class="btn btn-outline-light btn-sm">Выйти</button>
-                    </form>
+</head>
+<body class="h-100">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+                <i class="bi bi-cpu-fill me-2 text-primary"></i>HR-TECH
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    {% if not user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link rounded-pill px-4 me-2 nav-auth-btn" href="{% url 'register_company' %}">Регистрация</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link rounded-pill px-4 nav-auth-btn" href="{% url 'login' %}">Войти</a>
+                        </li>
                     {% else %}
-                    <a class="nav-link text-white me-3"
-                        href="{% url 'register_company' %}">Регистрация</a>
-                    <a class="nav-link btn btn-primary text-white px-4"
-                        href="{% url 'login' %}">Войти</a>
+                        <li class="nav-item">
+                            <a class="nav-link text-white me-3" href="{% url 'ratings' %}">
+                                <i class="bi bi-trophy me-1 text-warning"></i> Рейтинги
+                            </a>
+                        </li>
+
+                        {% if user.role == 'head' %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white me-3" href="{% url 'management_list' %}">Кабинет</a>
+                            </li>
+                        {% elif user.role == 'manager' %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white me-3" href="{% url 'management_list' %}">Кабинет</a>
+                            </li>
+                        {% elif user.role == 'employee' %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white me-3" href="{% url 'dashboard' %}">Кабинет</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="nav-item ms-lg-3">
+                            <form action="{% url 'logout' %}" method="post" class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                    <i class="bi bi-box-arrow-right me-1"></i> Выйти
+                                </button>
+                            </form>
+                        </li>
                     {% endif %}
-                </div>
+                </ul>
             </div>
-        </nav>
+        </div>
+    </nav>
 
-        <main style="min-height: 80vh;">
-            {% block content %}{% endblock %}
-        </main>
+    <main class="flex-shrink-0">
+        {% block content %}{% endblock %}
+    </main>
 
-        <footer>
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-4">
-                        <h5>О проекте</h5>
-                        <p class="small">{{ footer.about }}</p>
-                    </div>
-                    <div class="col-md-2">
-                        <h5>Ссылки</h5>
-                        <ul class="list-unstyled">
-                            {% for link in footer.quick_links %}
-                            <li><a href="{{ link.url }}">{{ link.name
-                                    }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    <div class="col-md-3">
-                        <h5>Контакты</h5>
-                        <p class="small mb-1"><i
-                                class="bi bi-geo-alt me-2"></i>{{
-                            footer.contacts.address }}</p>
-                        <p class="small mb-1"><i
-                                сlass="bi bi-envelope me-2"></i>{{
-                            footer.contacts.email }}</p>
-                        <p class="small"><i class="bi bi-telephone me-2"></i>{{
-                            footer.contacts.phone }}</p>
-                    </div>
-                    <div class="col-md-3 text-end">
-                        <h5>Мы в сети</h5>
-                        {% for social in footer.social %}
-                        <a href="#" class="ms-3 fs-5"><i
-                                class="bi bi-{{ social|lower }}"></i></a>
-                        {% endfor %}
-                    </div>
-                </div>
-                <hr class="mt-4 border-secondary">
-                <p class="text-center small mb-0">© 2026 Разработано
-                    для дипломного проекта. Все права защищены.</p>
-            </div>
-        </footer>
+    {% include 'evaluations/footer.html' %}
 
-        <script
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    </body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
