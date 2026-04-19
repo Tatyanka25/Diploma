@@ -20,11 +20,12 @@
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
         <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
             <h5 class="fw-bold mb-0 text-primary text-truncate me-3">{{ table.title }}</h5>
-            
+            {% if user.role != 'employee' %}
             <a href="{% url 'export_ratings' %}?table_id={{ table.table_id }}{% if table.pos_id %}&pos_id={{ table.pos_id }}{% endif %}" 
                class="btn btn-sm btn-outline-success rounded-pill px-3 flex-shrink-0">
                 <i class="bi bi-file-earmark-excel me-1"></i> Экспорт
             </a>
+            {% endif %}
         </div>
         
         <div class="table-responsive">
