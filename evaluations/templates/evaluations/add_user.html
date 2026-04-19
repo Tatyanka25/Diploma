@@ -11,7 +11,7 @@
                     
                     {% for field in form %}
                         {% if field.is_hidden %}
-                            {{ field }} <!-- Скрытое поле отрисуется молча -->
+                            {{ field }} 
                         {% else %}
                         <div class="mb-3">
                             <label class="form-label fw-bold">
@@ -22,7 +22,6 @@
                             </label>
                             
                             <div class="input-group has-validation">
-                                <!-- ПУСТЬ DJANGO САМ РИСУЕТ ИНПУТ ИЛИ СЕЛЕКТ -->
                                 {{ field }} 
                                 
                                 {% if field.errors %}

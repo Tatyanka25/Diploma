@@ -1,27 +1,145 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-4">
-        <div class="card shadow">
-            <div class="card-body">
-                <h3 class="card-title text-center">Вход в систему</h3>
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label">Логин</label>
-                        <input type="text" name="username" class="form-control"
-                            required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Пароль</label>
-                        <input type="password" name="password"
-                            class="form-control" required>
-                    </div>
-                    <button type="submit"
-                        class="btn btn-primary w-100">Войти</button>
-                </form>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-primary py-4 text-center border-0">
+                    <i class="bi bi-person-lock text-white display-4"></i>
+                    <h3 class="text-white fw-bold mt-2 mb-0">Вход в систему</h3>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    
+                    {% if form.non_field_errors %}
+                        {% for error in form.non_field_errors %}
+                            <div class="alert alert-danger border-0 small rounded-3 mb-4">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted text-uppercase ms-2">Логин</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 rounded-start-pill px-3">
+                                    <i class="bi bi-person text-primary"></i>
+                                </span>
+                                <input type="text" name="username" 
+                                       class="form-control form-control-lg bg-light border-0 rounded-end-pill {% if form.username.errors %}is-invalid{% endif %}" 
+                                       placeholder="ivanov_i" 
+                                       value="{{ form.username.value|default:'' }}">
+                                {% if form.username.errors %}
+                                    <div class="invalid-feedback ms-2">{{ form.username.errors|first }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted text-uppercase ms-2">Пароль</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 rounded-start-pill px-3">
+                                    <i class="bi bi-key text-primary"></i>
+                                </span>
+                                <input type="password" name="password" id="id_password"
+                                       class="form-control form-control-lg bg-light border-0 {% if form.password.errors %}is-invalid{% endif %}" 
+                                       placeholder="••••••••">
+                                <button class="btn btn-light border-0 rounded-end-pill px-3" type="button" id="togglePassword">
+                                    <i class="bi bi-eye" id="eyeIcon"></i>
+                                </button>
+                                {% if form.password.errors %}
+                                    <div class="invalid-feedback ms-2">{{ form.password.errors|first }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm py-3 fw-bold">
+                                Войти в личный кабинет <i class="bi bi-arrow-right-short ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer bg-light border-0 py-3 text-center">
+                    <p class="small text-muted mb-0">
+                        Проблемы со входом? 
+                        <a href="javascript:void(0)" id="resetPasswordLink" class="text-primary fw-bold text-decoration-none opacity-50">Сменить пароль</a>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#id_password');
+    const eyeIcon = document.querySelector('#eyeIcon');
+
+    togglePassword.addEventListener('click', function (e) {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        
+        eyeIcon.classList.toggle('bi-eye');
+        eyeIcon.classList.toggle('bi-eye-slash');
+    });
+
+    const resetLink = document.getElementById('resetPasswordLink');
+    const usernameInput = document.querySelector('input[name="username"]');
+
+    usernameInput.addEventListener('input', function() {
+        if (this.value.trim().length > 0) {
+            resetLink.classList.remove('opacity-50');
+            resetLink.style.cursor = 'pointer';
+        } else {
+            resetLink.classList.add('opacity-50');
+            resetLink.style.cursor = 'not-allowed';
+        }
+    });
+
+    resetLink.addEventListener('click', function() {
+        const username = usernameInput.value.trim();
+        
+        if (!username) {
+            alert("Пожалуйста, сначала введите ваш логин в поле выше.");
+            return;
+        }
+
+        fetch("{% url 'trigger_password_reset' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `username=${username}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert("Ссылка для смены пароля отправлена на вашу почту.");
+            } else if (data.status === 'no_email') {
+                alert("У данного пользователя не указан Email. Обратитесь к администратору.");
+            } else {
+                alert("Пользователь с таким логином не найден.");
+            }
+        });
+    });
+</script>
+
+<style>
+    .input-group-text, .btn-light { color: #6c757d; }
+    .form-control-lg { font-size: 1rem; }
+    .card { transition: all 0.3s ease; }
+    .btn-primary { background: linear-gradient(45deg, #0d6efd, #0b5ed7); border: none; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3) !important; }
+    
+    .is-invalid {
+        background-color: #fff8f8 !important;
+        border: 1px solid #dc3545 !important;
+    }
+</style>
 {% endblock %}
