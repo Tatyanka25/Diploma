@@ -1,0 +1,16 @@
+<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <h2 style="color: #198754;">Сессия оценки запущена!</h2>
+    <p>Здравствуйте, {{ manager.first_name }}!</p>
+    <p>Вы успешно активировали этап взаимной оценки для сотрудников на должности <strong>«{{ position.name }}»</strong>.</p>
+    <p>Всем подчиненным в этой группе направлены приглашения. Вам также необходимо выставить свои оценки каждому сотруднику, чтобы система могла завершить итоговый расчет.</p>
+    
+    <div style="margin: 30px 0;">
+        <a href="http://{{ domain }}{% url 'management_list' %}" 
+           style="background-color: #198754; color: white; padding: 12px 25px; text-decoration: none; border-radius: 30px; font-weight: bold; display: inline-block; shadow: 0 4px 6px rgba(0,0,0,0.1);">
+           Открыть список сотрудников
+        </a>
+    </div>
+    
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+    <p style="font-size: 0.9rem; color: #666;">Системное уведомление HR-портала</p>
+</div>
