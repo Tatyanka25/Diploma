@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import environ
 import os
+import dj_database_url
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -88,6 +90,10 @@ DATABASES = {
         'PORT': '4002',
     }
 }
+
+db_from_env = dj_database_url.config(conn_max_age=600)
+if db_from_env:
+    DATABASES['default'] = db_from_env
 
 
 # Password validation
@@ -139,3 +145,9 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
 DEFAULT_FROM_EMAIL = f"HR System <{env('EMAIL_USER')}>"
+
+ALLOWED_HOSTS = ['*'] 
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
