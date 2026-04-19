@@ -110,7 +110,7 @@ class UserCreationFormExtended(forms.ModelForm):
         }
 
         for field_name, field in self.fields.items():
-            if field_name != 'position': # Должность не трогаем, у неё свои стили
+            if field_name != 'position': 
                 field.widget.attrs.update({
                 'class': 'form-control',
                 'placeholder': placeholders.get(field_name, '')
@@ -174,3 +174,32 @@ class RussianSetPasswordForm(SetPasswordForm):
         self.fields['new_password1'].label = "Новый пароль"
         self.fields['new_password1'].help_text = "Пароль должен быть не менее 8 символов."
         self.fields['new_password2'].label = "Повторите новый пароль"
+
+class CompanyWeightsForm(forms.ModelForm):
+    class Meta:
+        model = Company
+        fields = ['weight_manager', 'weight_self', 'weight_peer']
+        labels = {
+            'weight_manager': 'Вес оценки менеджера (%)',
+            'weight_self': 'Вес самооценки (%)',
+            'weight_peer': 'Вес оценки коллег (%)',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.initial['weight_manager'] = int(self.instance.weight_manager * 100)
+            self.initial['weight_self'] = int(self.instance.weight_self * 100)
+            self.initial['weight_peer'] = int(self.instance.weight_peer * 100)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        w_m = cleaned_data.get('weight_manager')
+        w_s = cleaned_data.get('weight_self')
+        w_p = cleaned_data.get('weight_peer')
+
+        if w_m is not None and w_s is not None and w_p is not None:
+            if w_m + w_s + w_p != 100:
+                raise forms.ValidationError("Сумма всех весов должна быть строго равна 100%")
+        
+        return cleaned_data

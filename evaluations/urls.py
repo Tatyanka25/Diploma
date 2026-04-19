@@ -5,7 +5,6 @@ from .forms import RussianSetPasswordForm
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('employees/', views.employee_list, name='employee_list'),
     path('login/', auth_views.LoginView.as_view(template_name='evaluations/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
     path('register/', views.register_company, name='register_company'),
@@ -28,4 +27,14 @@ urlpatterns = [
          ), 
          name='password_set_complete'),
     path('compare-criteria/<int:employee_id>/', views.compare_criteria, name='compare_criteria'),
+    path('trigger-reset/', views.trigger_password_reset, name='trigger_password_reset'),
+    path('reset/<uidb64>/<token>/', 
+         auth_views.PasswordResetConfirmView.as_view(
+             template_name='evaluations/password_set_form.html', 
+             success_url='/password-set-complete/'
+         ), name='password_reset_confirm'),
+    path('rate/<int:employee_id>/', views.rate_employee, name='rate_employee'),
+    path('ratings/', views.ratings_view, name='ratings'),
+    path('ratings/export/', views.export_ratings_excel, name='export_ratings'),
+    path('ratings/start-new/', views.start_new_evaluation, name='start_new_evaluation'),
 ]

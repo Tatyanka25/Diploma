@@ -1,72 +1,202 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container py-4">
-    <div class="row g-4">
+    
+    <div class="row mb-4">
+        <div class="col">
+            <a href="{% url 'management_list' %}" class="btn btn-link text-decoration-none p-0 text-secondary">
+                <i class="bi bi-arrow-left-circle me-1"></i> Назад к списку сотрудников
+            </a>
+        </div>
+    </div>
 
+    <div class="row g-4">
         <div class="col-md-4">
             <div class="card p-4 shadow-sm border-0 rounded-4">
-                <h4 class="fw-bold">Индивидуальные критерии</h4>
-                <p class="text-muted small">Вы можете добавить до 2-х дополнительных критериев для этого сотрудника.</p>
+                <h4 class="fw-bold mb-3">Индивидуальные критерии</h4>
+                <p class="text-muted small mb-4">Добавьте до 2-х уникальных критериев. Пока вы не нажмете «Назначить», сотрудник их не увидит.</p>
                 
-                {% if individual_count < 2 %}
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="add_individual" value="1">
                     <div class="mb-3">
-                        <input type="text" name="criterion_name" class="form-control" placeholder="Название критерия" required>
+                        <label class="form-label small fw-bold text-uppercase opacity-75">Название критерия</label>
+                        <input type="text" name="criterion_name" class="form-control form-control-lg border-2" 
+                               placeholder="Напр: Инициативность" 
+                               {% if employee.criteria_confirmed or is_evaluation_open %}disabled{% endif %} required>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Добавить</button>
+                    
+                    {% if is_evaluation_open %}
+                        <button type="button" class="btn btn-secondary w-100 py-2 rounded-3 shadow-sm" disabled>
+                            <i class="bi bi-slash-circle me-2"></i>Оценка запущена
+                        </button>
+                    {% elif employee.criteria_confirmed %}
+                        <button type="button" class="btn btn-secondary w-100 py-2 rounded-3" disabled>
+                            <i class="bi bi-lock-fill me-2"></i>Редактирование закрыто
+                        </button>
+                    {% else %}
+                        <button type="submit" class="btn btn-primary w-100 py-2 rounded-3 shadow-sm">
+                            <i class="bi bi-plus-lg me-2"></i>Добавить критерий
+                        </button>
+                    {% endif %}
                 </form>
-                {% else %}
-                <div class="alert alert-warning small">Лимит индивидуальных критериев исчерпан.</div>
-                {% endif %}
 
                 {% if error_message %}
-                <div class="text-danger small mt-2">{{ error_message }}</div>
+                    <div class="alert alert-danger mt-3 py-2 small border-0">{{ error_message }}</div>
+                {% endif %}
+
+                {% if is_evaluation_open %}
+                <div class="mt-4 p-3 bg-warning bg-opacity-10 border border-warning-subtle rounded-3 small text-dark">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                    Идет активная фаза оценки. Изменение состава критериев невозможно.
+                </div>
+                {% elif employee.criteria_confirmed %}
+                <div class="mt-4 p-3 bg-light rounded-3 small text-muted">
+                    <i class="bi bi-info-circle-fill text-primary me-2"></i>
+                    Критерии зафиксированы. Чтобы изменить их, нажмите «Изменить состав критериев» ниже.
+                </div>
                 {% endif %}
             </div>
         </div>
 
         <div class="col-md-8">
             <div class="card p-4 shadow-sm border-0 rounded-4">
-                <h4 class="fw-bold mb-4">Набор критериев для: {{ employee.get_full_name }}</h4>
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                    <div>
+                        <h4 class="fw-bold mb-1">Критерии: {{ employee.get_full_name }}</h4>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3">{{ employee.position.name }}</span>
+                    </div>
+                    
+                    <div class="text-end">
+                        {% if is_evaluation_open %}
+                            <span class="badge bg-danger p-2 px-3 rounded-pill animate-pulse">
+                                <i class="bi bi-record-fill me-1"></i> Идет оценка эффективности
+                            </span>
+                        {% else %}
+                            {% with first=criteria.first %}
+                                {% if not employee.criteria_confirmed %}
+                                    <span class="badge bg-light text-muted border p-2 px-3 rounded-pill">Черновик</span>
+                                {% elif not first.manager_evaluated %}
+                                    <span class="badge bg-info-subtle text-info p-2 px-3 rounded-pill">Назначено</span>
+                                {% elif not first.employee_evaluated %}
+                                    <span class="badge bg-warning text-dark p-2 px-3 rounded-pill">Ожидает сотрудника</span>
+                                {% else %}
+                                    <span class="badge bg-success p-2 px-3 rounded-pill">МАИ завершен</span>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                    </div>
+                </div>
                 
                 <div class="list-group list-group-flush">
                     {% for c in criteria %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3 border-light">
                         <div>
-                            <span class="fw-bold">{{ c.name }}</span>
+                            <span class="fw-bold fs-5">{{ c.name }}</span>
                             {% if c.is_individual %}
-                                <span class="badge bg-info ms-2">Индивидуальный</span>
+                                <span class="badge bg-info-subtle text-info ms-2 small">Индивидуальный</span>
                             {% else %}
-                                <span class="badge bg-light text-muted border ms-2">От должности</span>
+                                <span class="badge bg-light text-muted border ms-2 small">Базовый</span>
                             {% endif %}
                         </div>
                         
                         <div class="d-flex align-items-center">
-                            {% if c.is_individual %}
-                                <form method="post" class="me-3" onsubmit="return confirm('Удалить индивидуальный критерий?')">
+                            {% if c.is_individual and not employee.criteria_confirmed and not is_evaluation_open %}
+                                <form method="post" class="me-3" onsubmit="return confirm('Удалить критерий?')">
                                     {% csrf_token %}
                                     <input type="hidden" name="delete_individual" value="1">
                                     <input type="hidden" name="criterion_id" value="{{ c.id }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger border-0">
-                                        <i class="bi bi-trash"></i>
+                                        <i class="bi bi-trash fs-5"></i>
                                     </button>
                                 </form>
                             {% endif %}
-                            <i class="bi bi-shield-check text-success"></i>
+                            
+                            {% if c.manager_evaluated and c.employee_evaluated %}
+                                <span class="badge bg-dark fs-6 px-3">Вес: {{ c.weight|floatformat:4 }}</span>
+                            {% elif employee.criteria_confirmed %}
+                                <i class="bi bi-eye text-primary opacity-50 fs-5" title="Видно сотруднику"></i>
+                            {% else %}
+                                <i class="bi bi-eye-slash text-light fs-5"></i>
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
                 </div>
 
-                {% if criteria.count >= 2 %}
-                <div class="mt-4 border-top pt-3">
-                    <a href="{% url 'compare_criteria' employee.id %}" class="btn btn-warning btn-lg w-100 fw-bold">Запустить МАИ (расчет весов)</a>
+                <div class="mt-5 pt-4 border-top">
+                    
+                    {% if not employee.criteria_confirmed %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="confirm_criteria" value="1">
+                            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold rounded-pill py-3 shadow" 
+                                    {% if criteria.count < 2 or is_evaluation_open %}disabled{% endif %}>
+                                <i class="bi bi-send-check me-2"></i>Назначить критерии сотруднику
+                            </button>
+                        </form>
+
+                    {% elif not is_evaluated %}
+                        <a href="{% url 'compare_criteria' employee.id %}" 
+                           class="btn btn-warning btn-lg w-100 fw-bold rounded-pill py-3 shadow mb-3 {% if is_evaluation_open %}disabled{% endif %}">
+                            <i class="bi bi-calculator me-2"></i>Запустить расчет МАИ
+                        </a>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="reset_criteria" value="1">
+                            <button type="submit" class="btn btn-outline-secondary w-100 rounded-pill py-2 border-0" 
+                                    {% if is_evaluation_open %}disabled{% endif %}>
+                                <i class="bi bi-pencil-square me-1"></i> Изменить состав критериев
+                            </button>
+                        </form>
+
+                    {% else %}
+                        
+                        {% if is_evaluation_open %}
+                            {% if manager_has_rated %}
+                                <div class="alert alert-success rounded-pill text-center py-3 mb-3 border-0 shadow-sm">
+                                    <i class="bi bi-check-circle-fill me-2"></i> Вы успешно выставили баллы этому сотруднику
+                                </div>
+                            {% else %}
+                                <a href="{% url 'rate_employee' employee.id %}" class="btn btn-success btn-lg w-100 fw-bold rounded-pill mb-4 py-3 shadow">
+                                    <i class="bi bi-star-fill me-2"></i> Перейти к оценке эффективности
+                                </a>
+                            {% endif %}
+                        {% endif %}
+
+                        {% with first=criteria.first %}
+                            <button class="btn btn-light btn-lg w-100 fw-bold rounded-pill mb-3 py-3 border text-muted" disabled style="background-color: #f8f9fa;">
+                                <i class="bi bi-lock-fill me-2"></i>
+                                {% if not first.employee_evaluated %}Веса зафиксированы (Ожидание сотрудника){% else %}Веса критериев полностью рассчитаны{% endif %}
+                            </button>
+                        {% endwith %}
+
+                        <form method="post" onsubmit="return confirm('Это действие полностью сбросит все расчеты и оценки. Продолжить?')">
+                            {% csrf_token %}
+                            <input type="hidden" name="reset_criteria" value="1">
+                            <button type="submit" class="btn btn-outline-danger w-100 rounded-pill py-2" 
+                                    {% if is_evaluation_open %}disabled title="Нельзя сбросить критерии при активной оценке"{% endif %}>
+                                <i class="bi bi-arrow-counterclockwise me-2"></i>Изменить критерии и сбросить расчет
+                            </button>
+                        </form>
+                    {% endif %}
+                    
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .btn-lg { font-size: 1.1rem; letter-spacing: 0.5px; }
+    .list-group-item:hover { background-color: #fcfcfc; }
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+</style>
 {% endblock %}
