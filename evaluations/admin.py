@@ -34,7 +34,7 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('name', 'bonus_pool', 'weight_manager', 'weight_self', 'weight_peer')
+    list_display = ('name', 'weight_manager', 'weight_self', 'weight_peer')
     search_fields = ('name',)
 
 @admin.register(Position)

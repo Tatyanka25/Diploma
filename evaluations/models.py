@@ -3,12 +3,6 @@ from django.db import models
 
 class Company(models.Model):
     name = models.CharField(max_length=255, verbose_name="Название компании")
-    bonus_pool = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        default=0, 
-        verbose_name="Премиальный фонд"
-    )
     weight_manager = models.FloatField(default=0.6, verbose_name="Вес оценки менеджера")
     weight_self = models.FloatField(default=0.2, verbose_name="Вес самооценки")
     weight_peer = models.FloatField(default=0.2, verbose_name="Вес оценки коллег")
