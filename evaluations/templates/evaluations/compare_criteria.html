@@ -1,48 +1,119 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container py-4">
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-        <div class="card-header bg-primary text-white py-3">
-            <h4 class="mb-0 text-center">Попарное сравнение критериев</h4>
-        </div>
-        <div class="card-body p-4">
-            <div class="alert alert-info small mb-4">
-                <strong>Инструкция:</strong> Выберите, какой критерий из пары важнее для успешной работы на данной должности и насколько.
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h2 class="fw-bold mb-4 text-center">Расчет весов критериев: {{ employee.get_full_name }}</h2>
+
+            {% if unique_presets %}
+            <div class="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-magic me-2"></i>Доступные варианты расчетов</h5>
+                </div>
+                <div class="card-body p-4 bg-light">
+                    <p class="text-muted mb-4">Для данного набора критериев в системе найдены готовые профили весов. Вы можете применить их мгновенно, не заполняя таблицу сравнения вручную.</p>
+                    
+                    <div class="row g-3">
+                        {% for preset in unique_presets %}
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm p-3">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2">
+                                        <span class="badge bg-primary px-3 py-2 rounded-pill">Вариант №{{ preset.id }}</span>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% for name, weight in preset.display.items %}
+                                            <div class="bg-white border rounded px-2 py-1 small">
+                                                <span class="text-muted">{{ name }}:</span> 
+                                                <span class="fw-bold text-primary">{{ weight }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 text-end">
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="apply_preset" value="1">
+                                            <input type="hidden" name="preset_data" value="{{ preset.serialized }}">
+                                            <button type="submit" class="btn btn-success btn-sm px-4 rounded-pill shadow-sm">
+                                                Применить этот расчет
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
+            {% endif %}
 
-            <form method="post">
-                {% csrf_token %}
-                {% for c1, c2 in pairs %}
-                <div class="row align-items-center mb-4 py-3 bg-light rounded-3 g-0">
-                    <div class="col-md-4 text-center px-2">
-                        <span class="fw-bold">{{ c1.name }}</span>
-                    </div>
-                    <div class="col-md-4">
-                        <select name="pair_{{ c1.id }}_{{ c2.id }}" class="form-select border-primary shadow-sm">
-                            <option value="1">1 — Равнозначны</option>
-                            <option value="3">3 — {{ c1.name }} важнее</option>
-                            <option value="5">5 — {{ c1.name }} значительно важнее</option>
-                            <option value="7">7 — {{ c1.name }} существенно важнее</option>
-                            <option value="9">9 — {{ c1.name }} абсолютно важнее</option>
-                            <option value="0.333">1/3 — {{ c2.name }} важнее</option>
-                            <option value="0.2">1/5 — {{ c2.name }} значительно важнее</option>
-                            <option value="0.142">1/7 — {{ c2.name }} существенно важнее</option>
-                            <option value="0.111">1/9 — {{ c2.name }} абсолютно важнее</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 text-center px-2">
-                        <span class="fw-bold">{{ c2.name }}</span>
-                    </div>
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 text-center"><i class="bi bi-calculator me-2"></i>Ручное попарное сравнение (МАИ)</h5>
                 </div>
-                {% endfor %}
+                <div class="card-body p-4">
+                    <div class="alert alert-warning border-0 bg-warning-subtle small mb-4">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Инструкция:</strong> Определите относительную важность каждого критерия в парах. 
+                        Цифра показывает, во сколько раз левый критерий важнее правого (или наоборот, если выбрана дробь 1/X).
+                    </div>
 
-                <div class="text-center mt-5">
-                    <button type="submit" class="btn btn-success btn-lg px-5 rounded-pill shadow">
-                        Завершить оценку и рассчитать веса
-                    </button>
+                    <form method="post" id="manualAHPForm">
+                        {% csrf_token %}
+                        {% for c1, c2 in pairs %}
+                        <div class="row align-items-center mb-4 py-3 bg-light rounded-4 g-0 border">
+                            <div class="col-md-4 text-center px-3">
+                                <span class="h6 fw-bold text-dark mb-0">{{ c1.name }}</span>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="px-2">
+                                    <select name="pair_{{ c1.id }}_{{ c2.id }}" class="form-select border-primary shadow-sm rounded-pill text-center fw-bold">
+                                        <option value="1">1 — Равнозначно</option>
+                                        <optgroup label="Превосходство: {{ c1.name }}">
+                                            <option value="3">3 — Умеренное</option>
+                                            <option value="5">5 — Существенное</option>
+                                            <option value="7">7 — Очень сильное</option>
+                                            <option value="9">9 — Абсолютное</option>
+                                        </optgroup>
+                                        <optgroup label="Превосходство: {{ c2.name }}">
+                                            <option value="0.333">1/3 — Умеренное</option>
+                                            <option value="0.2">1/5 — Существенное</option>
+                                            <option value="0.142">1/7 — Очень сильное</option>
+                                            <option value="0.111">1/9 — Абсолютное</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 text-center px-3">
+                                <span class="h6 fw-bold text-dark mb-0">{{ c2.name }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <div class="text-center mt-5">
+                            <a href="{% url 'manage_criteria' employee.id %}" class="btn btn-light btn-lg px-4 rounded-pill me-2">Отмена</a>
+                            <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
+                                Рассчитать веса критериев
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+    .badge { font-size: 0.85rem; }
+    .card { transition: transform 0.2s; }
+</style>
 {% endblock %}
