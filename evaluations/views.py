@@ -1034,26 +1034,17 @@ def check_and_finalize_position(position, manager, request):
                     ).exclude(evaluator=emp).exclude(evaluator__role__in=['manager', 'head']).aggregate(Avg('score'))['score__avg'] or 0
                     
                     weighted_val = (
-                        (m_score * company.weight_manager) + 
-                        (s_score * company.weight_self) + 
-                        (p_score * company.weight_peer)
+                        (m_score * company.weight_manager) + (s_score * company.weight_self) + (p_score * company.weight_peer)
                     )
                     final_index += (crit.weight * weighted_val)
                 
                 
                 EvaluationResult.objects.filter(
-                    employee=emp,
-                    month=now.month,
-                    year=now.year,
-                    is_archived=False
+                    employee=emp, month=now.month, year=now.year,is_archived=False
                 ).update(is_archived=True)
 
                 res = EvaluationResult.objects.create(
-                    employee=emp,
-                    month=now.month,
-                    year=now.year,
-                    total_score=round(final_index, 4),
-                    is_archived=False 
+                    employee=emp, month=now.month, year=now.year, total_score=round(final_index, 4), is_archived=False 
                 )
                 
                 try:

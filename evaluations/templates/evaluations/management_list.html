@@ -249,33 +249,50 @@
 
                     <div class="accordion accordion-flush" id="posAcc">
                         {% for pos in positions %}
+                        {% with is_opened=request.GET.opened_pos %}
                         <div class="accordion-item border rounded-3 mb-2 overflow-hidden shadow-sm">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2 px-3 fw-bold bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#p-{{ pos.id }}">
+                                <button class="accordion-button {% if is_opened != pos.id|stringformat:'s' %}collapsed{% endif %} py-2 px-3 fw-bold bg-light" 
+                                        type="button" data-bs-toggle="collapse" data-bs-target="#p-{{ pos.id }}">
                                     <div class="d-flex justify-content-between w-100 pe-3">
                                         <span class="small">{{ pos.name }}</span>
                                         <span class="badge bg-secondary rounded-pill small">{{ pos.base_criteria.count }}</span>
                                     </div>
                                 </button>
                             </h2>
-                            <div id="p-{{ pos.id }}" class="accordion-collapse collapse" data-bs-parent="#posAcc">
+                            <div id="p-{{ pos.id }}" class="accordion-collapse collapse {% if is_opened == pos.id|stringformat:'s' %}show{% endif %}" data-bs-parent="#posAcc">
                                 <div class="accordion-body p-2 bg-white">
                                     <ul class="list-group list-group-flush mb-2">
                                         {% for bc in pos.base_criteria.all %}
                                         <li class="list-group-item d-flex justify-content-between align-items-center py-1 border-0 small">
                                             <span class="text-secondary">• {{ bc.name }}</span>
-                                            <form method="post" style="display:inline;">
+                                            <form method="post" style="display:inline;" onsubmit="return confirm('Удалить критерий?')">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="delete_pos_criterion" value="1">
                                                 <input type="hidden" name="criterion_id" value="{{ bc.id }}">
                                                 <button type="submit" class="btn btn-link text-danger p-0 border-0"><i class="bi bi-x-circle"></i></button>
                                             </form>
                                         </li>
+                                        {% empty %}
+                                        <li class="list-group-item border-0 small text-muted">Критерии еще не добавлены</li>
                                         {% endfor %}
                                     </ul>
+                    
+                                    <form method="post" class="border-top pt-2 mt-1">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="add_pos_criterion" value="1">
+                                        <input type="hidden" name="pos_id" value="{{ pos.id }}">
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" name="crit_name" class="form-control" placeholder="Название критерия..." required>
+                                            <button class="btn btn-primary" type="submit">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>
+                        {% endwith %}
                         {% endfor %}
                     </div>
                 </div>
