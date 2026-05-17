@@ -759,12 +759,27 @@ def manage_criteria(request, employee_id):
         'manager_has_rated': manager_has_rated 
     })
 
+def calculate_ahp_consistency(matrix, weights):
+    matrix = np.array(matrix)
+    n = len(matrix)
+    if n <= 2:
+        return 0.0 
+    ri_dict = {3: 0.58, 4: 0.90, 5: 1.12, 6: 1.24, 7: 1.32, 8: 1.41}
+    weighted_sum_vector = np.dot(matrix, weights)
+    lambda_max = np.mean(weighted_sum_vector / weights)
+    ci = (lambda_max - n) / (n - 1)
+    ri = ri_dict.get(n, 1.45) 
+    cr = ci / ri
+    
+    return round(cr, 4)
+
 def calculate_ahp_weights(matrix):
     matrix = np.array(matrix)
     eig_vals, eig_vecs = np.linalg.eig(matrix)
     max_eig_vec = eig_vecs[:, eig_vals.argmax()].real
     weights = max_eig_vec / max_eig_vec.sum()
-    return weights.tolist()
+    cr = calculate_ahp_consistency(matrix, weights)
+    return weights.tolist(), cr
 
 def get_weights_from_ahp(employee, evaluator, criteria_list):
     n = len(criteria_list)
@@ -819,6 +834,7 @@ def send_evaluation_launch_emails(request, position, manager):
         fail_silently=True
     )
 
+@login_required
 @login_required
 def compare_criteria(request, employee_id):
     employee = get_object_or_404(User, id=employee_id, company=request.user.company)
@@ -877,32 +893,44 @@ def compare_criteria(request, employee_id):
                         criterion1=c1, criterion2=c2, value=float(val_raw)
                     )
 
+            criteria_list = list(current_criteria)
+            _, cr = get_weights_from_ahp(employee, request.user, criteria_list)
+
+            if cr > 0.10:
+                messages.error(request, f"Ошибка согласованности: суждения противоречивы (CR = {round(cr*100, 1)}%). Пожалуйста, исправьте оценки.")
+                return render(request, 'evaluations/compare_criteria.html', {
+                    'employee': employee,
+                    'pairs': pairs,
+                    'unique_presets': unique_presets,
+                    'saaty_scale': [(1,'Равно'),(3,'Умерено'),(5,'Сильно'),(7,'Очень'),(9,'Абсолютно')]
+                })
+
             if request.user.role in ['head', 'manager']:
-                current_criteria.update(manager_evaluated=True)
+                employee.assigned_criteria.all().update(manager_evaluated=True)
                 send_evaluation_notification(request, employee)
             else:
-                current_criteria.update(employee_evaluated=True)
+                employee.assigned_criteria.all().update(employee_evaluated=True)
 
-            first_crit = current_criteria.first()
-            if first_crit.manager_evaluated and first_crit.employee_evaluated:
-                criteria_list = list(current_criteria)
-                
-                has_manager_comparisons = PairwiseComparison.objects.filter(
-                    employee=employee, evaluator__role__in=['head', 'manager']
-                ).exists()
-                
-                if has_manager_comparisons:
-                    manager_weights = get_weights_from_ahp(employee, request.user, criteria_list)
+            final_criteria_qs = employee.assigned_criteria.all().order_by('name')
+            sample_crit = final_criteria_qs.first()
+            
+            if sample_crit and sample_crit.manager_evaluated and sample_crit.employee_evaluated:
+                employee_weights_data = get_weights_from_ahp(employee, employee, list(final_criteria_qs))
+                employee_weights = employee_weights_data[0]
+
+                mgr_comp_exists = PairwiseComparison.objects.filter(employee=employee, evaluator=employee.manager).exists()
+                if mgr_comp_exists:
+                    manager_weights_data = get_weights_from_ahp(employee, employee.manager, list(final_criteria_qs))
+                    manager_weights = manager_weights_data[0]
                 else:
-                    manager_weights = [c.weight for c in criteria_list]
+                    manager_weights = [c.weight for c in final_criteria_qs]
 
-                employee_weights = get_weights_from_ahp(employee, employee, criteria_list)
-
-                for i, crit in enumerate(criteria_list):
+                for i, crit in enumerate(final_criteria_qs):
                     final_w = (manager_weights[i] + employee_weights[i]) / 2
                     crit.weight = round(final_w, 4)
                     crit.save()
 
+            messages.success(request, "Оценки успешно сохранены.")
             return redirect('dashboard' if request.user.role == 'employee' else 'management_list')
 
     pairs = list(itertools.combinations(current_criteria, 2))

@@ -3,16 +3,27 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-10">
+            <!-- ВЫВОД ОШИБОК СОГЛАСОВАННОСТИ ИЗ BACKEND -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+                        <i class="bi {% if message.tags == 'error' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
             <h2 class="fw-bold mb-4 text-center">Расчет весов критериев: {{ employee.get_full_name }}</h2>
 
             {% if unique_presets %}
+            <!-- Блок пресетов (без изменений) -->
             <div class="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden">
                 <div class="card-header bg-dark text-white py-3">
                     <h5 class="mb-0"><i class="bi bi-magic me-2"></i>Доступные варианты расчетов</h5>
                 </div>
                 <div class="card-body p-4 bg-light">
-                    <p class="text-muted mb-4">Для данного набора критериев в системе найдены готовые профили весов. Вы можете применить их мгновенно, не заполняя таблицу сравнения вручную.</p>
-                    
+                    <p class="text-muted mb-4 small">Для данного набора критериев в системе найдены готовые профили весов. Вы можете применить их мгновенно.</p>
                     <div class="row g-3">
                         {% for preset in unique_presets %}
                         <div class="col-12">
@@ -25,7 +36,7 @@
                                         <div class="d-flex flex-wrap gap-2">
                                             {% for name, weight in preset.display.items %}
                                             <div class="bg-white border rounded px-2 py-1 small">
-                                                <span class="text-muted">{{ name }}:</span> 
+                                                <span class="text-muted small">{{ name }}:</span> 
                                                 <span class="fw-bold text-primary">{{ weight }}</span>
                                             </div>
                                             {% endfor %}
@@ -37,7 +48,7 @@
                                             <input type="hidden" name="apply_preset" value="1">
                                             <input type="hidden" name="preset_data" value="{{ preset.serialized }}">
                                             <button type="submit" class="btn btn-success btn-sm px-4 rounded-pill shadow-sm">
-                                                Применить этот расчет
+                                                Применить
                                             </button>
                                         </form>
                                     </div>
@@ -52,53 +63,72 @@
 
             <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
                 <div class="card-header bg-primary text-white py-3">
-                    <h5 class="mb-0 text-center"><i class="bi bi-calculator me-2"></i>Ручное попарное сравнение (МАИ)</h5>
+                    <h5 class="mb-0 text-center"><i class="bi bi-calculator me-2"></i>Попарное сравнение и проверка согласованности</h5>
                 </div>
                 <div class="card-body p-4">
-                    <div class="alert alert-warning border-0 bg-warning-subtle small mb-4">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        <strong>Инструкция:</strong> Определите относительную важность каждого критерия в парах. 
-                        Цифра показывает, во сколько раз левый критерий важнее правого (или наоборот, если выбрана дробь 1/X).
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-7">
+                            <div class="alert alert-warning border-0 bg-warning-subtle small h-100">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                <strong>Как заполнять:</strong> Выбирайте, какой критерий важнее в паре. Система автоматически проверит ваши ответы на логику. Если вы укажете, что А важнее Б, а Б важнее В, то А обязательно должно быть важнее В.
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="card border bg-light h-100 p-2">
+                                <span class="small fw-bold mb-1 text-center">Шкала Саати:</span>
+                                <div class="d-flex justify-content-between small px-2">
+                                    <span>1 - Равно</span>
+                                    <span>3 - Слабо</span>
+                                    <span>5 - Сильно</span>
+                                    <span>9 - Абсолютно</span>
+                                </div>
+                                <div class="progress mt-1" style="height: 5px;">
+                                    <div class="progress-bar" role="progressbar" style="width: 100%"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <form method="post" id="manualAHPForm">
                         {% csrf_token %}
                         {% for c1, c2 in pairs %}
-                        <div class="row align-items-center mb-4 py-3 bg-light rounded-4 g-0 border">
-                            <div class="col-md-4 text-center px-3">
-                                <span class="h6 fw-bold text-dark mb-0">{{ c1.name }}</span>
+                        <div class="row align-items-center mb-3 py-3 bg-white rounded-4 g-0 border-bottom">
+                            <div class="col-md-4 text-end px-3">
+                                <span class="fw-bold text-dark">{{ c1.name }}</span>
                             </div>
                             
                             <div class="col-md-4">
                                 <div class="px-2">
                                     <select name="pair_{{ c1.id }}_{{ c2.id }}" class="form-select border-primary shadow-sm rounded-pill text-center fw-bold">
-                                        <option value="1">1 — Равнозначно</option>
-                                        <optgroup label="Превосходство: {{ c1.name }}">
-                                            <option value="3">3 — Умеренное</option>
-                                            <option value="5">5 — Существенное</option>
-                                            <option value="7">7 — Очень сильное</option>
-                                            <option value="9">9 — Абсолютное</option>
+                                        <option value="1">1 (Равнозначно)</option>
+                                        <optgroup label="Важнее: {{ c1.name }}">
+                                            <option value="3">3 (Умеренно сильнее)</option>
+                                            <option value="5">5 (Существенно сильнее)</option>
+                                            <option value="7">7 (Очень сильно)</option>
+                                            <option value="9">9 (Абсолютно важнее)</option>
                                         </optgroup>
-                                        <optgroup label="Превосходство: {{ c2.name }}">
-                                            <option value="0.333">1/3 — Умеренное</option>
-                                            <option value="0.2">1/5 — Существенное</option>
-                                            <option value="0.142">1/7 — Очень сильное</option>
-                                            <option value="0.111">1/9 — Абсолютное</option>
+                                        <optgroup label="Важнее: {{ c2.name }}">
+                                            <option value="0.333">1/3 (Умеренно слабее)</option>
+                                            <option value="0.2">1/5 (Существенно слабее)</option>
+                                            <option value="0.142">1/7 (Очень слабее)</option>
+                                            <option value="0.111">1/9 (Абсолютно слабее)</option>
                                         </optgroup>
                                     </select>
                                 </div>
                             </div>
                             
-                            <div class="col-md-4 text-center px-3">
-                                <span class="h6 fw-bold text-dark mb-0">{{ c2.name }}</span>
+                            <div class="col-md-4 text-start px-3">
+                                <span class="fw-bold text-dark">{{ c2.name }}</span>
                             </div>
                         </div>
                         {% endfor %}
 
                         <div class="text-center mt-5">
-                            <a href="{% url 'manage_criteria' employee.id %}" class="btn btn-light btn-lg px-4 rounded-pill me-2">Отмена</a>
+                            <p class="text-muted small mb-3"><i class="bi bi-shield-check me-1"></i>После нажатия кнопки система рассчитает Индекс Согласованности (CR)</p>
+                            <a href="{% url 'manage_criteria' employee.id %}" class="btn btn-light btn-lg px-4 rounded-pill me-2 border">Отмена</a>
                             <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
-                                Рассчитать веса критериев
+                                Проверить и сохранить
                             </button>
                         </div>
                     </form>
@@ -114,6 +144,6 @@
         box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
     }
     .badge { font-size: 0.85rem; }
-    .card { transition: transform 0.2s; }
+    .progress-bar { background-color: #0d6efd; opacity: 0.6; }
 </style>
 {% endblock %}
